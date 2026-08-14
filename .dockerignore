@@ -1,0 +1,6 @@
+.git
+.idea
+vendor
+runtime
+web/assets
+.env

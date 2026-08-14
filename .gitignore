@@ -1,0 +1,9 @@
+/.env
+/vendor/
+/runtime/*
+!/runtime/.gitkeep
+/web/assets/*
+!/web/assets/.gitkeep
+/docker/mysql/data/
+.DS_Store
+.idea/
