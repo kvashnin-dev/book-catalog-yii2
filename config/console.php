@@ -6,6 +6,7 @@ $db = require __DIR__ . '/db.php';
 return [
     'id' => 'book-catalog-console',
     'basePath' => dirname(__DIR__),
+    'language' => 'ru-RU',
     'bootstrap' => ['log'],
     'controllerNamespace' => 'app\commands',
     'aliases' => [

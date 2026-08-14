@@ -1,0 +1,96 @@
+<?php
+
+namespace app\controllers;
+
+use app\forms\LoginForm;
+use app\forms\SignupForm;
+use Yii;
+use yii\filters\AccessControl;
+use yii\filters\VerbFilter;
+use yii\web\Controller;
+use yii\web\Response;
+
+class AuthController extends Controller
+{
+    public function behaviors(): array
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::class,
+                'only' => ['login', 'logout', 'signup'],
+                'rules' => [
+                    [
+                        'actions' => ['login', 'signup'],
+                        'allow' => true,
+                        'roles' => ['?'],
+                    ],
+                    [
+                        'actions' => ['logout'],
+                        'allow' => true,
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
+            'verbs' => [
+                'class' => VerbFilter::class,
+                'actions' => [
+                    'logout' => ['post'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Вход пользователя.
+     *
+     * @return Response|string
+     */
+    public function actionLogin(): Response|string
+    {
+        $form = new LoginForm();
+
+        if ($form->load(Yii::$app->request->post()) && $form->login()) {
+            return $this->goBack(['book/index']);
+        }
+
+        return $this->render('login', [
+            'form' => $form,
+        ]);
+    }
+
+    /**
+     * Регистрация пользователя.
+     *
+     * @return Response|string
+     */
+    public function actionSignup(): Response|string
+    {
+        $form = new SignupForm();
+
+        if ($form->load(Yii::$app->request->post())) {
+            $user = $form->signup();
+
+            if ($user !== null) {
+                Yii::$app->user->login($user);
+
+                return $this->redirect(['book/index']);
+            }
+        }
+
+        return $this->render('signup', [
+            'form' => $form,
+        ]);
+    }
+
+    /**
+     * Выход пользователя.
+     *
+     * @return Response
+     */
+    public function actionLogout(): Response
+    {
+        Yii::$app->user->logout();
+
+        return $this->redirect(['book/index']);
+    }
+}

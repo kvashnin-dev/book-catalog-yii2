@@ -6,6 +6,7 @@ $db = require __DIR__ . '/db.php';
 $config = [
     'id' => 'book-catalog',
     'basePath' => dirname(__DIR__),
+    'language' => 'ru-RU',
     'bootstrap' => ['log'],
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
@@ -14,6 +15,11 @@ $config = [
     'components' => [
         'request' => [
             'cookieValidationKey' => getenv('YII_COOKIE_VALIDATION_KEY') ?: 'dev-cookie-validation-key',
+        ],
+        'user' => [
+            'identityClass' => app\models\User::class,
+            'enableAutoLogin' => true,
+            'loginUrl' => ['auth/login'],
         ],
         'cache' => [
             'class' => yii\caching\FileCache::class,
@@ -34,7 +40,17 @@ $config = [
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
-            'rules' => [],
+            'rules' => [
+                '' => 'book/index',
+                'login' => 'auth/login',
+                'logout' => 'auth/logout',
+                'signup' => 'auth/signup',
+                'books/<id:\d+>' => 'book/view',
+                'books' => 'book/index',
+                'authors/<id:\d+>' => 'author/view',
+                'authors' => 'author/index',
+                'reports/authors' => 'report/authors',
+            ],
         ],
     ],
     'params' => $params,
