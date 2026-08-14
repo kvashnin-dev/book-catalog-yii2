@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace app\forms;
 
+use app\models\Author;
 use app\models\Subscription;
 use Yii;
 use yii\base\Model;
@@ -34,7 +35,26 @@ class SubscriptionForm extends Model
      */
     public function rules(): array
     {
-        return (new Subscription())->rules();
+        return [
+            [['author_id', 'phone'], 'required'],
+            [['author_id'], 'integer'],
+            [['phone'], 'trim'],
+            [['phone'], 'string', 'max' => 32],
+            [
+                ['phone'],
+                'match',
+                'pattern' => '/^\+?[0-9]{10,15}$/',
+                'message' => Yii::t('app', 'Укажите телефон в международном формате.'),
+            ],
+            [['author_id'], 'exist', 'targetClass' => Author::class, 'targetAttribute' => ['author_id' => 'id']],
+            [
+                ['author_id', 'phone'],
+                'unique',
+                'targetClass' => Subscription::class,
+                'targetAttribute' => ['author_id' => 'author_id', 'phone' => 'phone'],
+                'message' => Yii::t('app', 'Подписка на этого автора уже оформлена.'),
+            ],
+        ];
     }
 
     /**
@@ -45,6 +65,22 @@ class SubscriptionForm extends Model
     public function attributeLabels(): array
     {
         return (new Subscription())->attributeLabels();
+    }
+
+    /**
+     * Нормализует телефон перед валидацией формы.
+     *
+     * @return bool
+     */
+    public function beforeValidate(): bool
+    {
+        if (!parent::beforeValidate()) {
+            return false;
+        }
+
+        $this->phone = (string) preg_replace('/[^\d+]/', '', $this->phone);
+
+        return true;
     }
 
     /**
