@@ -22,20 +22,6 @@ use yii\web\ServerErrorHttpException;
  */
 class AuthorController extends Controller
 {
-    private AuthorRepository $authors;
-
-    /**
-     * @param string $id
-     * @param \yii\base\Module $module
-     * @param AuthorRepository $authors
-     * @param array<string, mixed> $config
-     */
-    public function __construct($id, $module, AuthorRepository $authors, $config = [])
-    {
-        $this->authors = $authors;
-        parent::__construct($id, $module, $config);
-    }
-
     /**
      * Настраивает доступы и HTTP-методы.
      *
@@ -72,7 +58,7 @@ class AuthorController extends Controller
     public function actionIndex(): string
     {
         return $this->render('index', [
-            'authors' => $this->authors->all(),
+            'authors' => $this->authors()->all(),
         ]);
     }
 
@@ -87,7 +73,7 @@ class AuthorController extends Controller
     {
         return $this->render('view', [
             'author' => $this->author($id),
-            'subscriptionForm' => new SubscriptionForm($id),
+            'subscriptionForm' => $this->subscriptionForm($id),
         ]);
     }
 
@@ -99,7 +85,7 @@ class AuthorController extends Controller
      */
     public function actionCreate(): Response|string
     {
-        $author = new Author();
+        $author = $this->authorModel();
 
         try {
             if ($author->load(Yii::$app->request->post()) && $author->save()) {
@@ -180,7 +166,7 @@ class AuthorController extends Controller
             return $this->redirect(['view', 'id' => $id]);
         }
 
-        $form = new SubscriptionForm($id);
+        $form = $this->subscriptionForm($id);
 
         if ($form->load(Yii::$app->request->post()) && $form->subscribe()) {
             Yii::$app->session->setFlash('success', Yii::t('app', 'Подписка оформлена.'));
@@ -201,9 +187,40 @@ class AuthorController extends Controller
     private function author(int $id): Author
     {
         try {
-            return $this->authors->get($id);
+            return $this->authors()->get($id);
         } catch (EntityNotFoundException $exception) {
             throw new NotFoundHttpException($exception->getMessage(), 0, $exception);
         }
+    }
+
+    /**
+     * Новая модель автора.
+     *
+     * @return Author
+     */
+    private function authorModel(): Author
+    {
+        return Yii::$container->get(Author::class);
+    }
+
+    /**
+     * Форма гостевой подписки на автора.
+     *
+     * @param int $authorId
+     * @return SubscriptionForm
+     */
+    private function subscriptionForm(int $authorId): SubscriptionForm
+    {
+        return Yii::$container->get(SubscriptionForm::class, [$authorId]);
+    }
+
+    /**
+     * Репозиторий авторов.
+     *
+     * @return AuthorRepository
+     */
+    private function authors(): AuthorRepository
+    {
+        return $this->module->get(AuthorRepository::class);
     }
 }

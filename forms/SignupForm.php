@@ -57,7 +57,7 @@ class SignupForm extends Model
             return null;
         }
 
-        $user = new User([
+        $user = Yii::$container->get(User::class, [], [
             'username' => $this->username,
         ]);
         $user->setPassword($this->password);

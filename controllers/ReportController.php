@@ -14,20 +14,6 @@ use yii\web\Controller;
  */
 class ReportController extends Controller
 {
-    private AuthorReportRepository $reports;
-
-    /**
-     * @param string $id
-     * @param \yii\base\Module $module
-     * @param AuthorReportRepository $reports
-     * @param array<string, mixed> $config
-     */
-    public function __construct($id, $module, AuthorReportRepository $reports, $config = [])
-    {
-        $this->reports = $reports;
-        parent::__construct($id, $module, $config);
-    }
-
     /**
      * ТОП-10 авторов по количеству книг за выбранный год.
      *
@@ -35,7 +21,7 @@ class ReportController extends Controller
      */
     public function actionAuthors(): string
     {
-        $form = new AuthorReportForm();
+        $form = $this->authorReportForm();
         $form->load(Yii::$app->request->get());
 
         if (!$form->validate()) {
@@ -44,7 +30,27 @@ class ReportController extends Controller
 
         return $this->render('authors', [
             'form' => $form,
-            'rows' => $this->reports->topByYear((int) $form->year),
+            'rows' => $this->reports()->topByYear((int) $form->year),
         ]);
+    }
+
+    /**
+     * Форма отчета по авторам.
+     *
+     * @return AuthorReportForm
+     */
+    private function authorReportForm(): AuthorReportForm
+    {
+        return Yii::$container->get(AuthorReportForm::class);
+    }
+
+    /**
+     * Репозиторий отчета по авторам.
+     *
+     * @return AuthorReportRepository
+     */
+    private function reports(): AuthorReportRepository
+    {
+        return $this->module->get(AuthorReportRepository::class);
     }
 }

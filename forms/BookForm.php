@@ -36,7 +36,7 @@ class BookForm extends Model
      */
     public function __construct(?Book $book = null, array $config = [])
     {
-        $this->book = $book ?? new Book();
+        $this->book = $book ?? Yii::$container->get(Book::class);
 
         if (!$this->book->isNewRecord) {
             $this->title = $this->book->title;

@@ -64,7 +64,10 @@ class SubscriptionForm extends Model
      */
     public function attributeLabels(): array
     {
-        return (new Subscription())->attributeLabels();
+        return [
+            'author_id' => Yii::t('app', 'Автор'),
+            'phone' => Yii::t('app', 'Телефон'),
+        ];
     }
 
     /**
@@ -94,7 +97,7 @@ class SubscriptionForm extends Model
             return false;
         }
 
-        $subscription = new Subscription([
+        $subscription = Yii::$container->get(Subscription::class, [], [
             'author_id' => $this->author_id,
             'phone' => $this->phone,
         ]);

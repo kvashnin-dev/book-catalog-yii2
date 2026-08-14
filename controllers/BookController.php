@@ -23,32 +23,6 @@ use yii\web\ServerErrorHttpException;
  */
 class BookController extends Controller
 {
-    private BookRepository $books;
-    private AuthorRepository $authors;
-    private BookService $bookService;
-
-    /**
-     * @param string $id
-     * @param \yii\base\Module $module
-     * @param BookRepository $books
-     * @param AuthorRepository $authors
-     * @param BookService $bookService
-     * @param array<string, mixed> $config
-     */
-    public function __construct(
-        $id,
-        $module,
-        BookRepository $books,
-        AuthorRepository $authors,
-        BookService $bookService,
-        $config = []
-    ) {
-        $this->books = $books;
-        $this->authors = $authors;
-        $this->bookService = $bookService;
-        parent::__construct($id, $module, $config);
-    }
-
     /**
      * Настраивает доступы и HTTP-методы.
      *
@@ -84,7 +58,7 @@ class BookController extends Controller
     public function actionIndex(): string
     {
         return $this->render('index', [
-            'books' => $this->books->all(),
+            'books' => $this->books()->all(),
         ]);
     }
 
@@ -110,13 +84,13 @@ class BookController extends Controller
      */
     public function actionCreate(): Response|string
     {
-        $form = new BookForm();
+        $form = $this->bookForm();
 
         if (Yii::$app->request->isPost) {
             try {
                 $form->load(Yii::$app->request->post());
                 $form->loadCoverFile();
-                $book = $form->validate() ? $this->bookService->create($form) : null;
+                $book = $form->validate() ? $this->bookService()->create($form) : null;
 
                 if ($book !== null) {
                     Yii::$app->session->setFlash('success', Yii::t('app', 'Книга добавлена.'));
@@ -144,13 +118,13 @@ class BookController extends Controller
      */
     public function actionUpdate(int $id): Response|string
     {
-        $form = new BookForm($this->book($id));
+        $form = $this->bookForm($this->book($id));
 
         if (Yii::$app->request->isPost) {
             try {
                 $form->load(Yii::$app->request->post());
                 $form->loadCoverFile();
-                $book = $form->validate() ? $this->bookService->update($form) : null;
+                $book = $form->validate() ? $this->bookService()->update($form) : null;
 
                 if ($book !== null) {
                     Yii::$app->session->setFlash('success', Yii::t('app', 'Книга обновлена.'));
@@ -203,7 +177,7 @@ class BookController extends Controller
     private function book(int $id): Book
     {
         try {
-            return $this->books->get($id);
+            return $this->books()->get($id);
         } catch (EntityNotFoundException $exception) {
             throw new NotFoundHttpException($exception->getMessage(), 0, $exception);
         }
@@ -216,6 +190,47 @@ class BookController extends Controller
      */
     private function authorsList(): array
     {
-        return $this->authors->listForSelect();
+        return $this->authors()->listForSelect();
+    }
+
+    /**
+     * Форма создания или редактирования книги.
+     *
+     * @param Book|null $book
+     * @return BookForm
+     */
+    private function bookForm(?Book $book = null): BookForm
+    {
+        return Yii::$container->get(BookForm::class, [$book]);
+    }
+
+    /**
+     * Репозиторий книг.
+     *
+     * @return BookRepository
+     */
+    private function books(): BookRepository
+    {
+        return $this->module->get(BookRepository::class);
+    }
+
+    /**
+     * Репозиторий авторов.
+     *
+     * @return AuthorRepository
+     */
+    private function authors(): AuthorRepository
+    {
+        return $this->module->get(AuthorRepository::class);
+    }
+
+    /**
+     * Сервис сценариев книг.
+     *
+     * @return BookService
+     */
+    private function bookService(): BookService
+    {
+        return $this->module->get(BookService::class);
     }
 }

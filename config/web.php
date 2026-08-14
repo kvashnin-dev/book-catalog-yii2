@@ -1,5 +1,8 @@
 <?php
 
+use app\repositories\AuthorReportRepository;
+use app\repositories\AuthorRepository;
+use app\repositories\BookRepository;
 use app\services\BookService;
 use app\services\S3Storage;
 use app\services\SmsPilotClient;
@@ -13,19 +16,6 @@ $config = [
     'basePath' => dirname(__DIR__),
     'language' => 'ru-RU',
     'sourceLanguage' => 'ru-RU',
-    'container' => [
-        'definitions' => [
-            S3Storage::class => static fn (): S3Storage => new S3Storage($params['s3']),
-            SmsPilotClient::class => static fn (): SmsPilotClient => new SmsPilotClient($params['smsPilot']),
-            SubscriptionNotifier::class => static fn ($container): SubscriptionNotifier => new SubscriptionNotifier(
-                $container->get(SmsPilotClient::class)
-            ),
-            BookService::class => static fn ($container): BookService => new BookService(
-                $container->get(S3Storage::class),
-                $container->get(SubscriptionNotifier::class)
-            ),
-        ],
-    ],
     'bootstrap' => ['log'],
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
@@ -43,6 +33,18 @@ $config = [
         'cache' => [
             'class' => yii\caching\FileCache::class,
         ],
+        AuthorRepository::class => AuthorRepository::class,
+        BookRepository::class => BookRepository::class,
+        AuthorReportRepository::class => AuthorReportRepository::class,
+        S3Storage::class => static fn (): S3Storage => Yii::$container->get(S3Storage::class, [$params['s3']]),
+        SmsPilotClient::class => static fn (): SmsPilotClient => Yii::$container->get(SmsPilotClient::class, [$params['smsPilot']]),
+        SubscriptionNotifier::class => static fn (): SubscriptionNotifier => Yii::$container->get(SubscriptionNotifier::class, [
+            Yii::$app->get(SmsPilotClient::class),
+        ]),
+        BookService::class => static fn (): BookService => Yii::$container->get(BookService::class, [
+            Yii::$app->get(S3Storage::class),
+            Yii::$app->get(SubscriptionNotifier::class),
+        ]),
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],

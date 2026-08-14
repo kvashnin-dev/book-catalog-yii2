@@ -57,7 +57,7 @@ class AuthController extends Controller
      */
     public function actionLogin(): Response|string
     {
-        $form = new LoginForm();
+        $form = $this->loginForm();
 
         if ($form->load(Yii::$app->request->post()) && $form->login()) {
             return $this->goBack(['book/index']);
@@ -75,7 +75,7 @@ class AuthController extends Controller
      */
     public function actionSignup(): Response|string
     {
-        $form = new SignupForm();
+        $form = $this->signupForm();
 
         if ($form->load(Yii::$app->request->post())) {
             $user = $form->signup();
@@ -102,5 +102,25 @@ class AuthController extends Controller
         Yii::$app->user->logout();
 
         return $this->redirect(['book/index']);
+    }
+
+    /**
+     * Форма входа пользователя.
+     *
+     * @return LoginForm
+     */
+    private function loginForm(): LoginForm
+    {
+        return Yii::$container->get(LoginForm::class);
+    }
+
+    /**
+     * Форма регистрации пользователя.
+     *
+     * @return SignupForm
+     */
+    private function signupForm(): SignupForm
+    {
+        return Yii::$container->get(SignupForm::class);
     }
 }
