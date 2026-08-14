@@ -8,14 +8,14 @@ use yii\widgets\ActiveForm;
 /** @var BookForm $form */
 /** @var array $authors */
 
-$this->title = $form->getBook()->isNewRecord ? 'Новая книга' : 'Редактирование книги';
+$this->title = $form->getBook()->isNewRecord ? Yii::t('app', 'Новая книга') : Yii::t('app', 'Редактирование книги');
 ?>
 <h1><?= Html::encode($this->title) ?></h1>
 
 <?php if ($authors === []): ?>
-    <p>Сначала добавьте автора.</p>
+    <p><?= Yii::t('app', 'Сначала добавьте автора.') ?></p>
     <div class="actions">
-        <?= Html::a('Добавить автора', ['author/create'], ['class' => 'button']) ?>
+        <?= Html::a(Yii::t('app', 'Добавить автора'), ['author/create'], ['class' => 'button']) ?>
     </div>
 <?php else: ?>
     <?php $activeForm = ActiveForm::begin(['options' => ['enctype' => 'multipart/form-data']]); ?>
@@ -26,8 +26,8 @@ $this->title = $form->getBook()->isNewRecord ? 'Новая книга' : 'Ред
     <?= $activeForm->field($form, 'authorIds')->listBox($authors, ['multiple' => true]) ?>
     <?= $activeForm->field($form, 'coverFile')->fileInput() ?>
     <div class="actions">
-        <?= Html::submitButton('Сохранить') ?>
-        <?= Html::a('Отмена', $form->getBook()->isNewRecord ? ['index'] : ['view', 'id' => $form->getBook()->id]) ?>
+        <?= Html::submitButton(Yii::t('app', 'Сохранить')) ?>
+        <?= Html::a(Yii::t('app', 'Отмена'), $form->getBook()->isNewRecord ? ['index'] : ['view', 'id' => $form->getBook()->id]) ?>
     </div>
     <?php ActiveForm::end(); ?>
 <?php endif; ?>

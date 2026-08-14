@@ -1,22 +1,59 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\controllers;
 
+use app\exceptions\EntityNotFoundException;
 use app\forms\BookForm;
-use app\models\Author;
 use app\models\Book;
-use app\services\S3Storage;
-use app\services\SmsPilotClient;
-use app\services\SubscriptionNotifier;
+use app\repositories\AuthorRepository;
+use app\repositories\BookRepository;
+use app\services\BookService;
 use Yii;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
+use yii\web\ServerErrorHttpException;
 
+/**
+ * Контроллер просмотра и управления книгами.
+ */
 class BookController extends Controller
 {
+    private BookRepository $books;
+    private AuthorRepository $authors;
+    private BookService $bookService;
+
+    /**
+     * @param string $id
+     * @param \yii\base\Module $module
+     * @param BookRepository $books
+     * @param AuthorRepository $authors
+     * @param BookService $bookService
+     * @param array<string, mixed> $config
+     */
+    public function __construct(
+        $id,
+        $module,
+        BookRepository $books,
+        AuthorRepository $authors,
+        BookService $bookService,
+        $config = []
+    ) {
+        $this->books = $books;
+        $this->authors = $authors;
+        $this->bookService = $bookService;
+        parent::__construct($id, $module, $config);
+    }
+
+    /**
+     * Настраивает доступы и HTTP-методы.
+     *
+     * @return array<string, mixed>
+     */
     public function behaviors(): array
     {
         return [
@@ -47,7 +84,7 @@ class BookController extends Controller
     public function actionIndex(): string
     {
         return $this->render('index', [
-            'books' => Book::find()->with('authors')->orderBy(['created_at' => SORT_DESC])->all(),
+            'books' => $this->books->all(),
         ]);
     }
 
@@ -56,11 +93,12 @@ class BookController extends Controller
      *
      * @param int $id
      * @return string
+     * @throws NotFoundHttpException
      */
     public function actionView(int $id): string
     {
         return $this->render('view', [
-            'book' => $this->findModel($id),
+            'book' => $this->book($id),
         ]);
     }
 
@@ -68,19 +106,25 @@ class BookController extends Controller
      * Создание книги.
      *
      * @return Response|string
+     * @throws ServerErrorHttpException
      */
     public function actionCreate(): Response|string
     {
         $form = new BookForm();
 
         if (Yii::$app->request->isPost) {
-            $book = $form->load(Yii::$app->request->post()) ? $form->save($this->storage()) : null;
+            try {
+                $form->load(Yii::$app->request->post());
+                $form->loadCoverFile();
+                $book = $form->validate() ? $this->bookService->create($form) : null;
 
-            if ($book !== null) {
-                $this->notifier()->notifyAboutNewBook($book);
-                Yii::$app->session->setFlash('success', 'Книга добавлена.');
+                if ($book !== null) {
+                    Yii::$app->session->setFlash('success', Yii::t('app', 'Книга добавлена.'));
 
-                return $this->redirect(['view', 'id' => $book->id]);
+                    return $this->redirect(['view', 'id' => $book->id]);
+                }
+            } catch (\Throwable $exception) {
+                throw new ServerErrorHttpException(Yii::t('app', 'Не удалось сохранить книгу.'), 0, $exception);
             }
         }
 
@@ -95,18 +139,26 @@ class BookController extends Controller
      *
      * @param int $id
      * @return Response|string
+     * @throws NotFoundHttpException
+     * @throws ServerErrorHttpException
      */
     public function actionUpdate(int $id): Response|string
     {
-        $form = new BookForm($this->findModel($id));
+        $form = new BookForm($this->book($id));
 
         if (Yii::$app->request->isPost) {
-            $book = $form->load(Yii::$app->request->post()) ? $form->save($this->storage()) : null;
+            try {
+                $form->load(Yii::$app->request->post());
+                $form->loadCoverFile();
+                $book = $form->validate() ? $this->bookService->update($form) : null;
 
-            if ($book !== null) {
-                Yii::$app->session->setFlash('success', 'Книга обновлена.');
+                if ($book !== null) {
+                    Yii::$app->session->setFlash('success', Yii::t('app', 'Книга обновлена.'));
 
-                return $this->redirect(['view', 'id' => $book->id]);
+                    return $this->redirect(['view', 'id' => $book->id]);
+                }
+            } catch (\Throwable $exception) {
+                throw new ServerErrorHttpException(Yii::t('app', 'Не удалось обновить книгу.'), 0, $exception);
             }
         }
 
@@ -121,42 +173,49 @@ class BookController extends Controller
      *
      * @param int $id
      * @return Response
+     * @throws NotFoundHttpException
+     * @throws ServerErrorHttpException
      */
     public function actionDelete(int $id): Response
     {
-        $this->findModel($id)->delete();
-        Yii::$app->session->setFlash('success', 'Книга удалена.');
+        try {
+            if ($this->book($id)->delete() === false) {
+                throw new ServerErrorHttpException(Yii::t('app', 'Не удалось удалить книгу.'));
+            }
+        } catch (NotFoundHttpException|ServerErrorHttpException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            throw new ServerErrorHttpException(Yii::t('app', 'Не удалось удалить книгу.'), 0, $exception);
+        }
+
+        Yii::$app->session->setFlash('success', Yii::t('app', 'Книга удалена.'));
 
         return $this->redirect(['index']);
     }
 
-    private function findModel(int $id): Book
+    /**
+     * Маппит доменную ошибку поиска в HTTP 404.
+     *
+     * @param int $id
+     * @return Book
+     * @throws NotFoundHttpException
+     */
+    private function book(int $id): Book
     {
-        $book = Book::find()->with('authors')->where(['id' => $id])->one();
-
-        if ($book === null) {
-            throw new NotFoundHttpException('Книга не найдена.');
+        try {
+            return $this->books->get($id);
+        } catch (EntityNotFoundException $exception) {
+            throw new NotFoundHttpException($exception->getMessage(), 0, $exception);
         }
-
-        return $book;
     }
 
+    /**
+     * Возвращает список авторов для формы книги.
+     *
+     * @return array<int, string>
+     */
     private function authorsList(): array
     {
-        return Author::find()
-            ->select(['full_name', 'id'])
-            ->orderBy(['full_name' => SORT_ASC])
-            ->indexBy('id')
-            ->column();
-    }
-
-    private function storage(): S3Storage
-    {
-        return new S3Storage(Yii::$app->params['s3']);
-    }
-
-    private function notifier(): SubscriptionNotifier
-    {
-        return new SubscriptionNotifier(new SmsPilotClient(Yii::$app->params['smsPilot']));
+        return $this->authors->listForSelect();
     }
 }

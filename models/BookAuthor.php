@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\models;
 
 use yii\db\ActiveRecord;
@@ -10,6 +12,11 @@ use yii\db\ActiveRecord;
  */
 class BookAuthor extends ActiveRecord
 {
+    /**
+     * Имя таблицы связей книг и авторов.
+     *
+     * @return string
+     */
     public static function tableName(): string
     {
         return '{{%book_author}}';

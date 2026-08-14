@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\models;
 
 use yii\behaviors\TimestampBehavior;
@@ -20,11 +22,21 @@ use yii\db\ActiveRecord;
  */
 class Book extends ActiveRecord
 {
+    /**
+     * Имя таблицы книг.
+     *
+     * @return string
+     */
     public static function tableName(): string
     {
         return '{{%book}}';
     }
 
+    /**
+     * Поведения модели.
+     *
+     * @return array<int|string, mixed>
+     */
     public function behaviors(): array
     {
         return [
@@ -32,6 +44,11 @@ class Book extends ActiveRecord
         ];
     }
 
+    /**
+     * Правила валидации.
+     *
+     * @return array<int, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -46,20 +63,30 @@ class Book extends ActiveRecord
         ];
     }
 
+    /**
+     * Подписи атрибутов.
+     *
+     * @return array<string, string>
+     */
     public function attributeLabels(): array
     {
         return [
             'id' => 'ID',
-            'title' => 'Название',
-            'release_year' => 'Год выпуска',
-            'description' => 'Описание',
+            'title' => \Yii::t('app', 'Название'),
+            'release_year' => \Yii::t('app', 'Год выпуска'),
+            'description' => \Yii::t('app', 'Описание'),
             'isbn' => 'ISBN',
-            'cover_url' => 'Фото главной страницы',
-            'created_at' => 'Создана',
-            'updated_at' => 'Обновлена',
+            'cover_url' => \Yii::t('app', 'Фото главной страницы'),
+            'created_at' => \Yii::t('app', 'Создана'),
+            'updated_at' => \Yii::t('app', 'Обновлена'),
         ];
     }
 
+    /**
+     * Авторы книги.
+     *
+     * @return ActiveQuery
+     */
     public function getAuthors(): ActiveQuery
     {
         return $this->hasMany(Author::class, ['id' => 'author_id'])
@@ -67,6 +94,11 @@ class Book extends ActiveRecord
             ->orderBy(['full_name' => SORT_ASC]);
     }
 
+    /**
+     * Возвращает имена авторов одной строкой.
+     *
+     * @return string
+     */
     public function getAuthorNames(): string
     {
         return implode(', ', array_map(

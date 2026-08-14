@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\models;
 
 use yii\behaviors\TimestampBehavior;
@@ -16,11 +18,21 @@ use yii\db\ActiveRecord;
  */
 class Author extends ActiveRecord
 {
+    /**
+     * Имя таблицы авторов.
+     *
+     * @return string
+     */
     public static function tableName(): string
     {
         return '{{%author}}';
     }
 
+    /**
+     * Поведения модели.
+     *
+     * @return array<int|string, mixed>
+     */
     public function behaviors(): array
     {
         return [
@@ -28,6 +40,11 @@ class Author extends ActiveRecord
         ];
     }
 
+    /**
+     * Правила валидации.
+     *
+     * @return array<int, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -37,16 +54,26 @@ class Author extends ActiveRecord
         ];
     }
 
+    /**
+     * Подписи атрибутов.
+     *
+     * @return array<string, string>
+     */
     public function attributeLabels(): array
     {
         return [
             'id' => 'ID',
-            'full_name' => 'ФИО',
-            'created_at' => 'Создан',
-            'updated_at' => 'Обновлен',
+            'full_name' => \Yii::t('app', 'ФИО'),
+            'created_at' => \Yii::t('app', 'Создан'),
+            'updated_at' => \Yii::t('app', 'Обновлен'),
         ];
     }
 
+    /**
+     * Связанные книги автора.
+     *
+     * @return ActiveQuery
+     */
     public function getBooks(): ActiveQuery
     {
         return $this->hasMany(Book::class, ['id' => 'book_id'])

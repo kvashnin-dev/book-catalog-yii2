@@ -1,23 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\forms;
 
 use app\models\User;
+use Yii;
 use yii\base\Model;
 
+/**
+ * Форма входа пользователя.
+ */
 class LoginForm extends Model
 {
-    /** @var string */
-    public $username = '';
+    public string $username = '';
 
-    /** @var string */
-    public $password = '';
+    public string $password = '';
 
-    /** @var bool|string */
-    public $rememberMe = true;
+    public bool|string $rememberMe = true;
 
     private ?User $user = null;
 
+    /**
+     * Правила валидации.
+     *
+     * @return array<int, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -28,12 +36,17 @@ class LoginForm extends Model
         ];
     }
 
+    /**
+     * Подписи полей.
+     *
+     * @return array<string, string>
+     */
     public function attributeLabels(): array
     {
         return [
-            'username' => 'Логин',
-            'password' => 'Пароль',
-            'rememberMe' => 'Запомнить меня',
+            'username' => Yii::t('app', 'Логин'),
+            'password' => Yii::t('app', 'Пароль'),
+            'rememberMe' => Yii::t('app', 'Запомнить меня'),
         ];
     }
 
@@ -52,7 +65,7 @@ class LoginForm extends Model
         $user = $this->getUser();
 
         if ($user === null || !$user->validatePassword($this->password)) {
-            $this->addError($attribute, 'Неверный логин или пароль.');
+            $this->addError($attribute, Yii::t('app', 'Неверный логин или пароль.'));
         }
     }
 
@@ -67,9 +80,20 @@ class LoginForm extends Model
             return false;
         }
 
-        return \Yii::$app->user->login($this->getUser(), $this->rememberMe ? 3600 * 24 * 30 : 0);
+        $user = $this->getUser();
+
+        if ($user === null) {
+            return false;
+        }
+
+        return Yii::$app->user->login($user, $this->rememberMe ? 3600 * 24 * 30 : 0);
     }
 
+    /**
+     * Возвращает пользователя по логину.
+     *
+     * @return User|null
+     */
     private function getUser(): ?User
     {
         if ($this->user === null) {

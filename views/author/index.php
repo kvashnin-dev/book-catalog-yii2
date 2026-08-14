@@ -6,20 +6,20 @@ use yii\helpers\Html;
 /** @var yii\web\View $this */
 /** @var Author[] $authors */
 
-$this->title = 'Авторы';
+$this->title = Yii::t('app', 'Авторы');
 ?>
 <h1><?= Html::encode($this->title) ?></h1>
 
 <?php if (!Yii::$app->user->isGuest): ?>
     <div class="actions">
-        <?= Html::a('Добавить автора', ['create'], ['class' => 'button']) ?>
+        <?= Html::a(Yii::t('app', 'Добавить автора'), ['create'], ['class' => 'button']) ?>
     </div>
 <?php endif; ?>
 
 <table>
     <thead>
     <tr>
-        <th>ФИО</th>
+        <th><?= Yii::t('app', 'ФИО') ?></th>
         <th></th>
     </tr>
     </thead>
@@ -27,7 +27,7 @@ $this->title = 'Авторы';
     <?php foreach ($authors as $author): ?>
         <tr>
             <td><?= Html::encode($author->full_name) ?></td>
-            <td><?= Html::a('Открыть', ['view', 'id' => $author->id]) ?></td>
+            <td><?= Html::a(Yii::t('app', 'Открыть'), ['view', 'id' => $author->id]) ?></td>
         </tr>
     <?php endforeach; ?>
     </tbody>

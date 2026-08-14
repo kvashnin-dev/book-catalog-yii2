@@ -8,23 +8,23 @@ use yii\widgets\ActiveForm;
 /** @var AuthorReportForm $form */
 /** @var array $rows */
 
-$this->title = 'ТОП-10 авторов';
+$this->title = Yii::t('app', 'ТОП-10 авторов');
 ?>
 <h1><?= Html::encode($this->title) ?></h1>
 
 <?php $activeForm = ActiveForm::begin(['method' => 'get']); ?>
 <?= $activeForm->field($form, 'year')->input('number') ?>
 <div class="actions">
-    <?= Html::submitButton('Показать') ?>
+    <?= Html::submitButton(Yii::t('app', 'Показать')) ?>
 </div>
 <?php ActiveForm::end(); ?>
 
 <table>
     <thead>
     <tr>
-        <th>Место</th>
-        <th>Автор</th>
-        <th>Книг за год</th>
+        <th><?= Yii::t('app', 'Место') ?></th>
+        <th><?= Yii::t('app', 'Автор') ?></th>
+        <th><?= Yii::t('app', 'Книг за год') ?></th>
     </tr>
     </thead>
     <tbody>

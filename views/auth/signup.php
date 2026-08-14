@@ -7,7 +7,7 @@ use yii\widgets\ActiveForm;
 /** @var yii\web\View $this */
 /** @var SignupForm $form */
 
-$this->title = 'Регистрация';
+$this->title = Yii::t('app', 'Регистрация');
 ?>
 <h1><?= Html::encode($this->title) ?></h1>
 
@@ -15,6 +15,6 @@ $this->title = 'Регистрация';
 <?= $activeForm->field($form, 'username')->textInput(['autofocus' => true]) ?>
 <?= $activeForm->field($form, 'password')->passwordInput() ?>
 <div class="actions">
-    <?= Html::submitButton('Зарегистрироваться') ?>
+    <?= Html::submitButton(Yii::t('app', 'Зарегистрироваться')) ?>
 </div>
 <?php ActiveForm::end(); ?>

@@ -1,18 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\forms;
 
 use app\models\User;
+use Yii;
 use yii\base\Model;
 
+/**
+ * Форма регистрации пользователя.
+ */
 class SignupForm extends Model
 {
-    /** @var string */
-    public $username = '';
+    public string $username = '';
 
-    /** @var string */
-    public $password = '';
+    public string $password = '';
 
+    /**
+     * Правила валидации.
+     *
+     * @return array<int, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -20,15 +29,20 @@ class SignupForm extends Model
             [['username', 'password'], 'required'],
             [['username'], 'string', 'min' => 3, 'max' => 64],
             [['password'], 'string', 'min' => 6, 'max' => 72],
-            [['username'], 'unique', 'targetClass' => User::class, 'message' => 'Пользователь с таким логином уже существует.'],
+            [['username'], 'unique', 'targetClass' => User::class, 'message' => Yii::t('app', 'Пользователь с таким логином уже существует.')],
         ];
     }
 
+    /**
+     * Подписи полей.
+     *
+     * @return array<string, string>
+     */
     public function attributeLabels(): array
     {
         return [
-            'username' => 'Логин',
-            'password' => 'Пароль',
+            'username' => Yii::t('app', 'Логин'),
+            'password' => Yii::t('app', 'Пароль'),
         ];
     }
 

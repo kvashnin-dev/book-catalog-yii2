@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\controllers;
 
 use app\forms\LoginForm;
@@ -10,8 +12,16 @@ use yii\filters\VerbFilter;
 use yii\web\Controller;
 use yii\web\Response;
 
+/**
+ * Контроллер авторизации и регистрации пользователей.
+ */
 class AuthController extends Controller
 {
+    /**
+     * Настраивает доступы и HTTP-методы.
+     *
+     * @return array<string, mixed>
+     */
     public function behaviors(): array
     {
         return [

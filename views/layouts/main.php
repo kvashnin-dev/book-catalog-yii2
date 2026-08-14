@@ -37,18 +37,18 @@ use yii\helpers\Html;
 <body>
 <?php $this->beginBody() ?>
 <header>
-    <strong><?= Html::a('Каталог книг', ['book/index']) ?></strong>
+    <strong><?= Html::a(Yii::t('app', 'Каталог книг'), ['book/index']) ?></strong>
     <nav>
-        <?= Html::a('Книги', ['book/index']) ?>
-        <?= Html::a('Авторы', ['author/index']) ?>
-        <?= Html::a('Отчет', ['report/authors']) ?>
+        <?= Html::a(Yii::t('app', 'Книги'), ['book/index']) ?>
+        <?= Html::a(Yii::t('app', 'Авторы'), ['author/index']) ?>
+        <?= Html::a(Yii::t('app', 'Отчет'), ['report/authors']) ?>
         <?php if (Yii::$app->user->isGuest): ?>
-            <?= Html::a('Войти', ['auth/login']) ?>
-            <?= Html::a('Регистрация', ['auth/signup']) ?>
+            <?= Html::a(Yii::t('app', 'Войти'), ['auth/login']) ?>
+            <?= Html::a(Yii::t('app', 'Регистрация'), ['auth/signup']) ?>
         <?php else: ?>
             <span><?= Html::encode(Yii::$app->user->identity->username) ?></span>
             <?php $form = \yii\widgets\ActiveForm::begin(['action' => ['auth/logout'], 'method' => 'post', 'options' => ['style' => 'display:inline']]); ?>
-            <?= Html::submitButton('Выйти') ?>
+            <?= Html::submitButton(Yii::t('app', 'Выйти')) ?>
             <?php \yii\widgets\ActiveForm::end(); ?>
         <?php endif; ?>
     </nav>

@@ -1,13 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\services;
 
 use app\models\Book;
 use app\models\Subscription;
 use Yii;
 
+/**
+ * Сервис уведомления подписчиков о новых книгах.
+ */
 class SubscriptionNotifier
 {
+    /**
+     * @param SmsPilotClient $smsPilot
+     */
     public function __construct(
         private readonly SmsPilotClient $smsPilot
     ) {
@@ -41,13 +49,18 @@ class SubscriptionNotifier
         }
     }
 
+    /**
+     * Формирует текст SMS по книге.
+     *
+     * @param Book $book
+     * @return string
+     */
     private function message(Book $book): string
     {
-        return sprintf(
-            'В каталог добавлена книга "%s" (%d). Автор(ы): %s.',
-            $book->title,
-            $book->release_year,
-            $book->getAuthorNames()
-        );
+        return Yii::t('app', 'В каталог добавлена книга "{title}" ({year}). Автор(ы): {authors}.', [
+            'title' => $book->title,
+            'year' => $book->release_year,
+            'authors' => $book->getAuthorNames(),
+        ]);
     }
 }

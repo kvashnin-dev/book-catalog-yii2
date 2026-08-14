@@ -1,11 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\services;
 
 use RuntimeException;
+use Yii;
 
+/**
+ * Клиент API-1 SMSPilot.
+ */
 class SmsPilotClient
 {
+    /**
+     * @param array{apiKey: string, test: bool, apiUrl: string} $config
+     */
     public function __construct(
         private readonly array $config
     ) {
@@ -40,14 +49,18 @@ class SmsPilotClient
         ]));
 
         if ($response === false) {
-            throw new RuntimeException('SMSPilot не ответил на запрос.');
+            throw new RuntimeException(Yii::t('app', 'SMSPilot не ответил на запрос.'));
         }
 
         $data = json_decode($response, true);
 
         if (isset($data['error'])) {
-            $message = $data['error']['description_ru'] ?? $data['error']['description'] ?? 'неизвестная ошибка';
-            throw new RuntimeException('SMSPilot вернул ошибку: ' . $message);
+            $message = $data['error']['description_ru']
+                ?? $data['error']['description']
+                ?? Yii::t('app', 'неизвестная ошибка');
+            throw new RuntimeException(Yii::t('app', 'SMSPilot вернул ошибку: {message}', [
+                'message' => $message,
+            ]));
         }
     }
 }

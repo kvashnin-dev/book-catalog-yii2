@@ -1,12 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\services;
 
 use RuntimeException;
 use yii\web\UploadedFile;
 
+/**
+ * Адаптер загрузки файлов в S3-compatible хранилище.
+ */
 class S3Storage
 {
+    /**
+     * @param array{endpoint: string, publicEndpoint: string, bucket: string, region: string, accessKey: string, secretKey: string} $config
+     */
     public function __construct(
         private readonly array $config
     ) {
@@ -25,7 +33,7 @@ class S3Storage
         $content = file_get_contents($file->tempName);
 
         if ($content === false) {
-            throw new RuntimeException('Не удалось прочитать загруженный файл.');
+            throw new RuntimeException(\Yii::t('app', 'Не удалось прочитать загруженный файл.'));
         }
 
         $this->putObject($key, $content, $file->type ?: 'application/octet-stream');
@@ -33,6 +41,14 @@ class S3Storage
         return $this->publicUrl($key);
     }
 
+    /**
+     * Отправляет объект в bucket.
+     *
+     * @param string $key
+     * @param string $content
+     * @param string $contentType
+     * @return void
+     */
     private function putObject(string $key, string $content, string $contentType): void
     {
         $endpoint = rtrim((string) $this->config['endpoint'], '/');
@@ -54,10 +70,22 @@ class S3Storage
         $statusLine = $http_response_header[0] ?? '';
 
         if ($result === false || !str_contains($statusLine, '200')) {
-            throw new RuntimeException('S3 не принял файл: ' . ($statusLine ?: 'нет ответа'));
+            throw new RuntimeException(\Yii::t('app', 'S3 не принял файл: {status}', [
+                'status' => $statusLine ?: \Yii::t('app', 'нет ответа'),
+            ]));
         }
     }
 
+    /**
+     * Формирует подписанные заголовки AWS Signature V4.
+     *
+     * @param string $method
+     * @param string $bucket
+     * @param string $key
+     * @param string $content
+     * @param string $contentType
+     * @return array<string, string>
+     */
     private function signedHeaders(string $method, string $bucket, string $key, string $content, string $contentType): array
     {
         $endpoint = parse_url((string) $this->config['endpoint']);
@@ -107,6 +135,14 @@ class S3Storage
         ];
     }
 
+    /**
+     * Возвращает ключ подписи AWS Signature V4.
+     *
+     * @param string $secretKey
+     * @param string $date
+     * @param string $region
+     * @return string
+     */
     private function signingKey(string $secretKey, string $date, string $region): string
     {
         $dateKey = hash_hmac('sha256', $date, 'AWS4' . $secretKey, true);
@@ -116,6 +152,12 @@ class S3Storage
         return hash_hmac('sha256', 'aws4_request', $dateRegionServiceKey, true);
     }
 
+    /**
+     * Преобразует массив заголовков в HTTP-строку.
+     *
+     * @param array<string, string> $headers
+     * @return string
+     */
     private function formatHeaders(array $headers): string
     {
         $lines = [];
@@ -127,6 +169,12 @@ class S3Storage
         return implode("\r\n", $lines);
     }
 
+    /**
+     * Возвращает публичный URL загруженного объекта.
+     *
+     * @param string $key
+     * @return string
+     */
     private function publicUrl(string $key): string
     {
         return rtrim((string) $this->config['publicEndpoint'], '/')

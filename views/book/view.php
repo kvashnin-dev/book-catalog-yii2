@@ -12,9 +12,9 @@ $this->title = $book->title;
 
 <?php if (!Yii::$app->user->isGuest): ?>
     <div class="actions">
-        <?= Html::a('Редактировать', ['update', 'id' => $book->id], ['class' => 'button']) ?>
+        <?= Html::a(Yii::t('app', 'Редактировать'), ['update', 'id' => $book->id], ['class' => 'button']) ?>
         <?= Html::beginForm(['delete', 'id' => $book->id], 'post') ?>
-        <?= Html::submitButton('Удалить') ?>
+        <?= Html::submitButton(Yii::t('app', 'Удалить')) ?>
         <?= Html::endForm() ?>
     </div>
 <?php endif; ?>
@@ -24,16 +24,16 @@ $this->title = $book->title;
 <?php endif; ?>
 
 <dl>
-    <dt>Год выпуска</dt>
+    <dt><?= Yii::t('app', 'Год выпуска') ?></dt>
     <dd><?= (int) $book->release_year ?></dd>
     <dt>ISBN</dt>
     <dd><?= Html::encode($book->isbn) ?></dd>
-    <dt>Авторы</dt>
+    <dt><?= Yii::t('app', 'Авторы') ?></dt>
     <dd>
         <?php foreach ($book->authors as $author): ?>
             <?= Html::a(Html::encode($author->full_name), ['author/view', 'id' => $author->id]) ?><br>
         <?php endforeach; ?>
     </dd>
-    <dt>Описание</dt>
+    <dt><?= Yii::t('app', 'Описание') ?></dt>
     <dd><?= nl2br(Html::encode($book->description)) ?></dd>
 </dl>

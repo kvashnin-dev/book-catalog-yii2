@@ -7,7 +7,7 @@ use yii\widgets\ActiveForm;
 /** @var yii\web\View $this */
 /** @var LoginForm $form */
 
-$this->title = 'Вход';
+$this->title = Yii::t('app', 'Вход');
 ?>
 <h1><?= Html::encode($this->title) ?></h1>
 
@@ -16,6 +16,6 @@ $this->title = 'Вход';
 <?= $activeForm->field($form, 'password')->passwordInput() ?>
 <?= $activeForm->field($form, 'rememberMe')->checkbox() ?>
 <div class="actions">
-    <?= Html::submitButton('Войти') ?>
+    <?= Html::submitButton(Yii::t('app', 'Войти')) ?>
 </div>
 <?php ActiveForm::end(); ?>

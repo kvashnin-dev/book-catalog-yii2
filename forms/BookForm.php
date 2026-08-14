@@ -1,37 +1,39 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\forms;
 
 use app\models\Author;
 use app\models\Book;
-use app\models\BookAuthor;
-use app\services\S3Storage;
 use Yii;
 use yii\base\Model;
-use yii\db\Exception;
 use yii\web\UploadedFile;
 
+/**
+ * Форма создания и редактирования книги.
+ */
 class BookForm extends Model
 {
-    /** @var string */
-    public $title = '';
+    public string $title = '';
 
-    /** @var int|string|null */
-    public $release_year = null;
+    public int|string|null $release_year = null;
 
-    /** @var string */
-    public $description = '';
+    public string $description = '';
 
-    /** @var string */
-    public $isbn = '';
+    public string $isbn = '';
 
-    /** @var array */
-    public $authorIds = [];
+    /** @var list<int|string> */
+    public array $authorIds = [];
 
     public ?UploadedFile $coverFile = null;
 
     private Book $book;
 
+    /**
+     * @param Book|null $book
+     * @param array<string, mixed> $config
+     */
     public function __construct(?Book $book = null, array $config = [])
     {
         $this->book = $book ?? new Book();
@@ -47,6 +49,11 @@ class BookForm extends Model
         parent::__construct($config);
     }
 
+    /**
+     * Правила валидации.
+     *
+     * @return array<int, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -63,15 +70,20 @@ class BookForm extends Model
         ];
     }
 
+    /**
+     * Подписи полей.
+     *
+     * @return array<string, string>
+     */
     public function attributeLabels(): array
     {
         return [
-            'title' => 'Название',
-            'release_year' => 'Год выпуска',
-            'description' => 'Описание',
+            'title' => Yii::t('app', 'Название'),
+            'release_year' => Yii::t('app', 'Год выпуска'),
+            'description' => Yii::t('app', 'Описание'),
             'isbn' => 'ISBN',
-            'authorIds' => 'Авторы',
-            'coverFile' => 'Фото главной страницы',
+            'authorIds' => Yii::t('app', 'Авторы'),
+            'coverFile' => Yii::t('app', 'Фото главной страницы'),
         ];
     }
 
@@ -87,56 +99,23 @@ class BookForm extends Model
         $count = Author::find()->where(['id' => $ids])->count();
 
         if ($ids === [] || (int) $count !== count($ids)) {
-            $this->addError($attribute, 'Выберите существующих авторов.');
+            $this->addError($attribute, Yii::t('app', 'Выберите существующих авторов.'));
         }
     }
 
     /**
-     * Сохраняет книгу, обложку и связи с авторами.
+     * Возвращает атрибуты книги для сохранения.
      *
-     * @param S3Storage $storage
-     * @return Book|null
-     * @throws Exception
+     * @return array{title: string, release_year: int|string|null, description: string, isbn: string}
      */
-    public function save(S3Storage $storage): ?Book
+    public function bookAttributes(): array
     {
-        $this->coverFile = UploadedFile::getInstance($this, 'coverFile');
-
-        if (!$this->validate()) {
-            return null;
-        }
-
-        $transaction = Yii::$app->db->beginTransaction();
-
-        try {
-            $this->book->setAttributes([
-                'title' => $this->title,
-                'release_year' => $this->release_year,
-                'description' => $this->description,
-                'isbn' => $this->isbn,
-            ]);
-
-            if ($this->coverFile !== null) {
-                $this->book->cover_url = $storage->upload($this->coverFile, 'covers');
-            }
-
-            if (!$this->book->save()) {
-                $this->addErrors($this->book->getErrors());
-                $transaction->rollBack();
-
-                return null;
-            }
-
-            $this->syncAuthors();
-            $transaction->commit();
-
-            return $this->book;
-        } catch (\Throwable $exception) {
-            $transaction->rollBack();
-            $this->addError('coverFile', $exception->getMessage());
-
-            return null;
-        }
+        return [
+            'title' => $this->title,
+            'release_year' => $this->release_year,
+            'description' => $this->description,
+            'isbn' => $this->isbn,
+        ];
     }
 
     /**
@@ -149,20 +128,22 @@ class BookForm extends Model
         return $this->book;
     }
 
-    private function syncAuthors(): void
+    /**
+     * Загружает файл обложки из текущего request.
+     *
+     * @return void
+     */
+    public function loadCoverFile(): void
     {
-        BookAuthor::deleteAll(['book_id' => $this->book->id]);
-        $rows = array_map(
-            fn (int $authorId): array => [$this->book->id, $authorId],
-            $this->normalizedAuthorIds()
-        );
-
-        Yii::$app->db->createCommand()
-            ->batchInsert(BookAuthor::tableName(), ['book_id', 'author_id'], $rows)
-            ->execute();
+        $this->coverFile = UploadedFile::getInstance($this, 'coverFile');
     }
 
-    private function normalizedAuthorIds(): array
+    /**
+     * Возвращает нормализованный список ID авторов.
+     *
+     * @return list<int>
+     */
+    public function normalizedAuthorIds(): array
     {
         $ids = array_map('intval', $this->authorIds);
         $ids = array_filter($ids, static fn (int $id): bool => $id > 0);
@@ -170,6 +151,11 @@ class BookForm extends Model
         return array_values(array_unique($ids));
     }
 
+    /**
+     * Возвращает фильтр уникальности ISBN для текущей книги.
+     *
+     * @return callable
+     */
     private function uniqueIsbnFilter(): callable
     {
         return function ($query): void {

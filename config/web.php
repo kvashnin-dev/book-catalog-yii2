@@ -1,5 +1,10 @@
 <?php
 
+use app\services\BookService;
+use app\services\S3Storage;
+use app\services\SmsPilotClient;
+use app\services\SubscriptionNotifier;
+
 $params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/db.php';
 
@@ -7,6 +12,19 @@ $config = [
     'id' => 'book-catalog',
     'basePath' => dirname(__DIR__),
     'language' => 'ru-RU',
+    'container' => [
+        'definitions' => [
+            S3Storage::class => static fn (): S3Storage => new S3Storage($params['s3']),
+            SmsPilotClient::class => static fn (): SmsPilotClient => new SmsPilotClient($params['smsPilot']),
+            SubscriptionNotifier::class => static fn ($container): SubscriptionNotifier => new SubscriptionNotifier(
+                $container->get(SmsPilotClient::class)
+            ),
+            BookService::class => static fn ($container): BookService => new BookService(
+                $container->get(S3Storage::class),
+                $container->get(SubscriptionNotifier::class)
+            ),
+        ],
+    ],
     'bootstrap' => ['log'],
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
