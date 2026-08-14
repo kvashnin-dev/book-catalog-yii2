@@ -66,6 +66,16 @@ class BookForm extends Model
     }
 
     /**
+     * Возвращает поля, доступные для массового заполнения.
+     *
+     * @return list<string>
+     */
+    public function safeAttributes(): array
+    {
+        return array_values(array_diff(parent::safeAttributes(), ['coverFile']));
+    }
+
+    /**
      * Правила валидации.
      *
      * @return array<int, array<mixed>>
