@@ -12,6 +12,7 @@ $config = [
     'id' => 'book-catalog',
     'basePath' => dirname(__DIR__),
     'language' => 'ru-RU',
+    'sourceLanguage' => 'ru-RU',
     'container' => [
         'definitions' => [
             S3Storage::class => static fn (): S3Storage => new S3Storage($params['s3']),

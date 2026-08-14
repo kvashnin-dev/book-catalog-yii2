@@ -50,6 +50,22 @@ class BookForm extends Model
     }
 
     /**
+     * Возвращает поля, которые можно заполнить из POST.
+     *
+     * @return list<string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'title',
+            'release_year',
+            'description',
+            'isbn',
+            'authorIds',
+        ];
+    }
+
+    /**
      * Правила валидации.
      *
      * @return array<int, array<mixed>>

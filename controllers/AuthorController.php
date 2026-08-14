@@ -8,6 +8,7 @@ use app\exceptions\EntityNotFoundException;
 use app\forms\SubscriptionForm;
 use app\models\Author;
 use app\repositories\AuthorRepository;
+use Throwable;
 use Yii;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
@@ -106,7 +107,7 @@ class AuthorController extends Controller
 
                 return $this->redirect(['view', 'id' => $author->id]);
             }
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             throw new ServerErrorHttpException(Yii::t('app', 'Не удалось сохранить автора.'), 0, $exception);
         }
 
@@ -133,7 +134,7 @@ class AuthorController extends Controller
 
                 return $this->redirect(['view', 'id' => $author->id]);
             }
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             throw new ServerErrorHttpException(Yii::t('app', 'Не удалось обновить автора.'), 0, $exception);
         }
 
@@ -158,7 +159,7 @@ class AuthorController extends Controller
             }
         } catch (NotFoundHttpException|ServerErrorHttpException $exception) {
             throw $exception;
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             throw new ServerErrorHttpException(Yii::t('app', 'Не удалось удалить автора.'), 0, $exception);
         }
 
