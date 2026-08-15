@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace app\controllers;
 
-use app\exceptions\EntityNotFoundException;
 use app\forms\SubscriptionForm;
 use app\models\Author;
+use app\presenters\HttpExceptionPresenter;
 use app\repositories\AuthorRepository;
 use Throwable;
 use Yii;
@@ -58,7 +58,7 @@ class AuthorController extends Controller
     public function actionIndex(): string
     {
         return $this->render('index', [
-            'authors' => $this->authors()->all(),
+            'authors' => $this->module->get(AuthorRepository::class)->all(),
         ]);
     }
 
@@ -72,8 +72,10 @@ class AuthorController extends Controller
     public function actionView(int $id): string
     {
         return $this->render('view', [
-            'author' => $this->author($id),
-            'subscriptionForm' => $this->subscriptionForm($id),
+            'author' => $this->module->get(HttpExceptionPresenter::class)->notFound(
+                fn (): Author => $this->module->get(AuthorRepository::class)->get($id)
+            ),
+            'subscriptionForm' => Yii::$container->get(SubscriptionForm::class, [$id]),
         ]);
     }
 
@@ -85,7 +87,7 @@ class AuthorController extends Controller
      */
     public function actionCreate(): Response|string
     {
-        $author = $this->authorModel();
+        $author = Yii::$container->get(Author::class);
 
         try {
             if ($author->load(Yii::$app->request->post()) && $author->save()) {
@@ -112,7 +114,9 @@ class AuthorController extends Controller
      */
     public function actionUpdate(int $id): Response|string
     {
-        $author = $this->author($id);
+        $author = $this->module->get(HttpExceptionPresenter::class)->notFound(
+            fn (): Author => $this->module->get(AuthorRepository::class)->get($id)
+        );
 
         try {
             if ($author->load(Yii::$app->request->post()) && $author->save()) {
@@ -140,7 +144,11 @@ class AuthorController extends Controller
     public function actionDelete(int $id): Response
     {
         try {
-            if ($this->author($id)->delete() === false) {
+            $author = $this->module->get(HttpExceptionPresenter::class)->notFound(
+                fn (): Author => $this->module->get(AuthorRepository::class)->get($id)
+            );
+
+            if ($author->delete() === false) {
                 throw new ServerErrorHttpException(Yii::t('app', 'Не удалось удалить автора.'));
             }
         } catch (NotFoundHttpException|ServerErrorHttpException $exception) {
@@ -166,7 +174,7 @@ class AuthorController extends Controller
             return $this->redirect(['view', 'id' => $id]);
         }
 
-        $form = $this->subscriptionForm($id);
+        $form = Yii::$container->get(SubscriptionForm::class, [$id]);
 
         if ($form->load(Yii::$app->request->post()) && $form->subscribe()) {
             Yii::$app->session->setFlash('success', Yii::t('app', 'Подписка оформлена.'));
@@ -175,52 +183,5 @@ class AuthorController extends Controller
         }
 
         return $this->redirect(['view', 'id' => $id]);
-    }
-
-    /**
-     * Маппит доменную ошибку поиска в HTTP 404.
-     *
-     * @param int $id
-     * @return Author
-     * @throws NotFoundHttpException
-     */
-    private function author(int $id): Author
-    {
-        try {
-            return $this->authors()->get($id);
-        } catch (EntityNotFoundException $exception) {
-            throw new NotFoundHttpException($exception->getMessage(), 0, $exception);
-        }
-    }
-
-    /**
-     * Новая модель автора.
-     *
-     * @return Author
-     */
-    private function authorModel(): Author
-    {
-        return Yii::$container->get(Author::class);
-    }
-
-    /**
-     * Форма гостевой подписки на автора.
-     *
-     * @param int $authorId
-     * @return SubscriptionForm
-     */
-    private function subscriptionForm(int $authorId): SubscriptionForm
-    {
-        return Yii::$container->get(SubscriptionForm::class, [$authorId]);
-    }
-
-    /**
-     * Репозиторий авторов.
-     *
-     * @return AuthorRepository
-     */
-    private function authors(): AuthorRepository
-    {
-        return $this->module->get(AuthorRepository::class);
     }
 }

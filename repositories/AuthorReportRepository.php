@@ -20,7 +20,7 @@ class AuthorReportRepository
      * @param int $year
      * @return list<array{author_id: int|string, full_name: string, books_count: int|string}>
      */
-    public function topByYear(int $year): array
+    public function getTopByYear(int $year): array
     {
         return (new Query())
             ->select([

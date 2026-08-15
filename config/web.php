@@ -3,6 +3,7 @@
 use app\repositories\AuthorReportRepository;
 use app\repositories\AuthorRepository;
 use app\repositories\BookRepository;
+use app\presenters\HttpExceptionPresenter;
 use app\services\BookService;
 use app\services\S3Storage;
 use app\services\SmsPilotClient;
@@ -36,8 +37,15 @@ $config = [
         AuthorRepository::class => AuthorRepository::class,
         BookRepository::class => BookRepository::class,
         AuthorReportRepository::class => AuthorReportRepository::class,
-        S3Storage::class => static fn (): S3Storage => Yii::$container->get(S3Storage::class, [$params['s3']]),
-        SmsPilotClient::class => static fn (): SmsPilotClient => Yii::$container->get(SmsPilotClient::class, [$params['smsPilot']]),
+        HttpExceptionPresenter::class => HttpExceptionPresenter::class,
+        S3Storage::class => static fn (): S3Storage => Yii::$container->get(
+            S3Storage::class,
+            [$params['s3']]
+        ),
+        SmsPilotClient::class => static fn (): SmsPilotClient => Yii::$container->get(
+            SmsPilotClient::class,
+            [$params['smsPilot']]
+        ),
         SubscriptionNotifier::class => static fn (): SubscriptionNotifier => Yii::$container->get(SubscriptionNotifier::class, [
             Yii::$app->get(SmsPilotClient::class),
         ]),

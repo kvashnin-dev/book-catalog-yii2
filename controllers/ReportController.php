@@ -21,7 +21,7 @@ class ReportController extends Controller
      */
     public function actionAuthors(): string
     {
-        $form = $this->authorReportForm();
+        $form = Yii::$container->get(AuthorReportForm::class);
         $form->load(Yii::$app->request->get());
 
         if (!$form->validate()) {
@@ -30,27 +30,9 @@ class ReportController extends Controller
 
         return $this->render('authors', [
             'form' => $form,
-            'rows' => $this->reports()->topByYear((int) $form->year),
+            'rows' => $this->module
+                ->get(AuthorReportRepository::class)
+                ->getTopByYear((int) $form->year),
         ]);
-    }
-
-    /**
-     * Форма отчета по авторам.
-     *
-     * @return AuthorReportForm
-     */
-    private function authorReportForm(): AuthorReportForm
-    {
-        return Yii::$container->get(AuthorReportForm::class);
-    }
-
-    /**
-     * Репозиторий отчета по авторам.
-     *
-     * @return AuthorReportRepository
-     */
-    private function reports(): AuthorReportRepository
-    {
-        return $this->module->get(AuthorReportRepository::class);
     }
 }

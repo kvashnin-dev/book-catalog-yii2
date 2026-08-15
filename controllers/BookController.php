@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace app\controllers;
 
-use app\exceptions\EntityNotFoundException;
 use app\forms\BookForm;
 use app\models\Book;
+use app\presenters\HttpExceptionPresenter;
 use app\repositories\AuthorRepository;
 use app\repositories\BookRepository;
 use app\services\BookService;
+use Throwable;
 use Yii;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
@@ -58,7 +59,7 @@ class BookController extends Controller
     public function actionIndex(): string
     {
         return $this->render('index', [
-            'books' => $this->books()->all(),
+            'books' => $this->module->get(BookRepository::class)->all(),
         ]);
     }
 
@@ -72,7 +73,9 @@ class BookController extends Controller
     public function actionView(int $id): string
     {
         return $this->render('view', [
-            'book' => $this->book($id),
+            'book' => $this->module->get(HttpExceptionPresenter::class)->notFound(
+                fn (): Book => $this->module->get(BookRepository::class)->get($id)
+            ),
         ]);
     }
 
@@ -84,27 +87,29 @@ class BookController extends Controller
      */
     public function actionCreate(): Response|string
     {
-        $form = $this->bookForm();
+        $form = Yii::$container->get(BookForm::class);
 
         if (Yii::$app->request->isPost) {
             try {
                 $form->load(Yii::$app->request->post());
                 $form->loadCoverFile();
-                $book = $form->validate() ? $this->bookService()->create($form) : null;
+                $book = $form->validate()
+                    ? $this->module->get(BookService::class)->create($form)
+                    : null;
 
                 if ($book !== null) {
                     Yii::$app->session->setFlash('success', Yii::t('app', 'Книга добавлена.'));
 
                     return $this->redirect(['view', 'id' => $book->id]);
                 }
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 throw new ServerErrorHttpException(Yii::t('app', 'Не удалось сохранить книгу.'), 0, $exception);
             }
         }
 
         return $this->render('form', [
             'form' => $form,
-            'authors' => $this->authorsList(),
+            'authors' => $this->module->get(AuthorRepository::class)->listForSelect(),
         ]);
     }
 
@@ -118,27 +123,32 @@ class BookController extends Controller
      */
     public function actionUpdate(int $id): Response|string
     {
-        $form = $this->bookForm($this->book($id));
+        $book = $this->module->get(HttpExceptionPresenter::class)->notFound(
+            fn (): Book => $this->module->get(BookRepository::class)->get($id)
+        );
+        $form = Yii::$container->get(BookForm::class, [$book]);
 
         if (Yii::$app->request->isPost) {
             try {
                 $form->load(Yii::$app->request->post());
                 $form->loadCoverFile();
-                $book = $form->validate() ? $this->bookService()->update($form) : null;
+                $book = $form->validate()
+                    ? $this->module->get(BookService::class)->update($form)
+                    : null;
 
                 if ($book !== null) {
                     Yii::$app->session->setFlash('success', Yii::t('app', 'Книга обновлена.'));
 
                     return $this->redirect(['view', 'id' => $book->id]);
                 }
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 throw new ServerErrorHttpException(Yii::t('app', 'Не удалось обновить книгу.'), 0, $exception);
             }
         }
 
         return $this->render('form', [
             'form' => $form,
-            'authors' => $this->authorsList(),
+            'authors' => $this->module->get(AuthorRepository::class)->listForSelect(),
         ]);
     }
 
@@ -153,84 +163,21 @@ class BookController extends Controller
     public function actionDelete(int $id): Response
     {
         try {
-            if ($this->book($id)->delete() === false) {
+            $book = $this->module->get(HttpExceptionPresenter::class)->notFound(
+                fn (): Book => $this->module->get(BookRepository::class)->get($id)
+            );
+
+            if ($book->delete() === false) {
                 throw new ServerErrorHttpException(Yii::t('app', 'Не удалось удалить книгу.'));
             }
         } catch (NotFoundHttpException|ServerErrorHttpException $exception) {
             throw $exception;
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             throw new ServerErrorHttpException(Yii::t('app', 'Не удалось удалить книгу.'), 0, $exception);
         }
 
         Yii::$app->session->setFlash('success', Yii::t('app', 'Книга удалена.'));
 
         return $this->redirect(['index']);
-    }
-
-    /**
-     * Маппит доменную ошибку поиска в HTTP 404.
-     *
-     * @param int $id
-     * @return Book
-     * @throws NotFoundHttpException
-     */
-    private function book(int $id): Book
-    {
-        try {
-            return $this->books()->get($id);
-        } catch (EntityNotFoundException $exception) {
-            throw new NotFoundHttpException($exception->getMessage(), 0, $exception);
-        }
-    }
-
-    /**
-     * Возвращает список авторов для формы книги.
-     *
-     * @return array<int, string>
-     */
-    private function authorsList(): array
-    {
-        return $this->authors()->listForSelect();
-    }
-
-    /**
-     * Форма создания или редактирования книги.
-     *
-     * @param Book|null $book
-     * @return BookForm
-     */
-    private function bookForm(?Book $book = null): BookForm
-    {
-        return Yii::$container->get(BookForm::class, [$book]);
-    }
-
-    /**
-     * Репозиторий книг.
-     *
-     * @return BookRepository
-     */
-    private function books(): BookRepository
-    {
-        return $this->module->get(BookRepository::class);
-    }
-
-    /**
-     * Репозиторий авторов.
-     *
-     * @return AuthorRepository
-     */
-    private function authors(): AuthorRepository
-    {
-        return $this->module->get(AuthorRepository::class);
-    }
-
-    /**
-     * Сервис сценариев книг.
-     *
-     * @return BookService
-     */
-    private function bookService(): BookService
-    {
-        return $this->module->get(BookService::class);
     }
 }
