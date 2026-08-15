@@ -1,5 +1,7 @@
 <?php
 
+$smsPilotTest = getenv('SMSPILOT_TEST');
+
 return [
     's3' => [
         'endpoint' => getenv('S3_ENDPOINT') ?: 'http://minio:9000',
@@ -11,7 +13,7 @@ return [
     ],
     'smsPilot' => [
         'apiKey' => getenv('SMSPILOT_API_KEY') ?: 'XXXXXXXXXXXXYYYYYYYYYYYYZZZZZZZZXXXXXXXXXXXXYYYYYYYYYYYYZZZZZZZZ',
-        'test' => (bool) (getenv('SMSPILOT_TEST') ?: true),
+        'test' => filter_var($smsPilotTest === false ? true : $smsPilotTest, FILTER_VALIDATE_BOOLEAN),
         'apiUrl' => 'https://smspilot.ru/api.php',
     ],
 ];
