@@ -2,7 +2,7 @@
 
 /** @var yii\web\View $this */
 
-$this->title = 'Book Catalog';
+$this->title = Yii::t('app', 'Каталог книг');
 ?>
-<h1>Book Catalog</h1>
-<p>Yii2 project is ready.</p>
+<h1><?= Yii::t('app', 'Каталог книг') ?></h1>
+<p><?= Yii::t('app', 'Проект Yii2 готов.') ?></p>
